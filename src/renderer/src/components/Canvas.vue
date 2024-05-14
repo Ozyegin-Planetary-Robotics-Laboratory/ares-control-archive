@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import {onMounted, onUnmounted} from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { ObjectLoader } from 'three'
 
 const three: {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   renderer: THREE.WebGLRenderer
   controls: OrbitControls | null
+  oloader: ObjectLoader
   objects: Record<string, THREE.Object3D>
 } = {
   scene: new THREE.Scene(),
@@ -16,6 +18,7 @@ const three: {
     antialias: true
   }),
   controls: null,
+  oloader: new ObjectLoader(),
   objects: {}
 }
 
@@ -33,12 +36,7 @@ const initScene = () => {
   three.objects['light1'] = light2
   three.objects['light2'] = light2
   three.scene.add(new THREE.AmbientLight(0x666666))
-  three.scene.background = new THREE.Color(0x111122)
-
-  const grid = new THREE.GridHelper(10, 10, 0x888888, 0x444444)
-  grid.position.y = -0.5
-  three.scene.add(grid)
-  three.objects['grid'] = grid
+  three.scene.background = new THREE.Color(0xaaaaaa)
 }
 
 const initCamera = () => {
@@ -95,6 +93,20 @@ onUnmounted(() => {
 three.renderer.setAnimationLoop(() => {
   three.controls.update()
   three.renderer.render(three.scene, three.camera)
+})
+
+window.electron.onCloud((data: unknown) => {
+  const point_cloud = three.oloader.parse(data)
+  if (three.objects['terrain']) {
+    const obj = three.objects['terrain']
+    if (obj.geometry) {
+      obj.geometry.dispose()
+      obj.material.dispose()
+      three.scene.remove(obj)
+    }
+  }
+  three.scene.add(point_cloud)
+  three.objects['terrain'] = point_cloud
 })
 </script>
 
