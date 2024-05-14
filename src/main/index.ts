@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { Cloud, parse } from './cloud'
+import { parse } from './cloud'
 import * as THREE from 'three'
 import icon from '../../resources/icon.png?asset'
 import ros from 'rosnodejs'
@@ -47,7 +47,7 @@ function createWindow(): BrowserWindow {
       '/cloud',
       'sensor_msgs/PointCloud2',
       (msg) => {
-        const cloud_mesh: THREE.Points = parse(msg as Cloud)
+        const cloud_mesh: THREE.Points = parse(msg)
         mainWindow.webContents.send('cloud', cloud_mesh.toJSON())
       }
     )
