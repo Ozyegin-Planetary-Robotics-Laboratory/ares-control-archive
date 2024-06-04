@@ -24,6 +24,7 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "rosnodejs": "^3.1.0",
+    "tf-rosnodejs": "^0.3.1",
     "three": "^0.164.1"
   },
   "devDependencies": {
