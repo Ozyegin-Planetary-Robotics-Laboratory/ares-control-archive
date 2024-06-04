@@ -37,6 +37,17 @@ const initScene = () => {
   three.objects['light2'] = light2
   three.scene.add(new THREE.AmbientLight(0x666666))
   three.scene.background = new THREE.Color(0xaaaaaa)
+  const ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 15, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+  )
+  three.scene.add(ball)
+  three.objects['ball'] = ball
+  const grid = new THREE.GridHelper(10, 10, 0x000000, 0x000000)
+  grid.material.opacity = 0.2
+  grid.material.transparent = true
+  three.scene.add(grid)
+  three.objects['grid'] = grid
 }
 
 const initCamera = () => {
@@ -108,6 +119,41 @@ window.electron.onCloud((data: unknown) => {
   three.scene.add(point_cloud)
   three.objects['terrain'] = point_cloud
 })
+
+window.electron.onTFStatic((data: unknown) => {
+  if (!three.objects) {
+    if (!three.objects['ball']) {
+      return
+    }
+  }
+  three.objects['ball'].position.x = data.transform.translation.x
+  three.objects['ball'].position.y = data.transform.translation.y
+  three.objects['ball'].position.z = data.transform.translation.z
+  /*const quaternionY = new THREE.Quaternion()
+  quaternionY.setFromAxisAngle(new THREE.Vector3(0, 1, 0).normalize(), 0.01)
+  three.objects['ball'].quaternion.multiply(quaternionY)*/
+  const quaternion = new THREE.Quaternion()
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.transform.rotation.z)
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0).normalize(), data.transform.rotation.y)
+  quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0).normalize(), data.transform.rotation.x)
+  three.objects['ball'].quaternion.multiply(quaternion)
+})
+
+window.electron.oncmdVel((data: unknown) => {
+  if (!three.objects) {
+    if (!three.objects['ball']) {
+      return
+    }
+  }
+  const quaternion = new THREE.Quaternion()
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.angular.z)
+  three.objects['ball'].quaternion.multiply(quaternion)
+  three.objects['ball'].position.x += data.linear.x
+  three.objects['ball'].position.y += data.linear.y
+  three.objects['ball'].position.z += data.linear.z
+  t
+})
+
 </script>
 
 <template>
