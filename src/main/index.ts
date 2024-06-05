@@ -7,6 +7,7 @@ import icon from '../../resources/icon.png?asset'
 import ros from 'rosnodejs'
 import Subscriber from 'rosnodejs/dist/lib/Subscriber'
 import { transform } from 'typescript'
+import { exo, find } from './tf2'
 
 /**
  * Electron
@@ -43,6 +44,8 @@ function createWindow(): BrowserWindow {
   }
 
   ros.initNode('/ares_electron_gui').then((nh) => {
+    exo(nh)
+    find()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
       '/cloud',
@@ -57,19 +60,21 @@ function createWindow(): BrowserWindow {
       '/tf',
       'tf2_msgs/TFMessage',
       (msg) => {
-        // eslint-disable-next-line prettier/prettier 
+        // eslint-disable-next-line prettier/prettier
         if (msg.transforms[0].header.frame_id === 'map' && msg.transforms[0].child_frame_id === 'base_link') {
           mainWindow.webContents.send('tf_static', msg.transforms[0])
         }
       }
     )
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub3: Subscriber<'geometry_msgs/TransformStamped'> = nh.subscribe('/cmd_vel', 'geometry_msgs/Twist', (msg) => {
-    //  mainWindow.webContents.send('cmd_vel', msg)
-      mainWindow.webContents.send('cmd_vel', msg)
-    }
+    const sub3: Subscriber<'geometry_msgs/TransformStamped'> = nh.subscribe(
+      '/cmd_vel',
+      'geometry_msgs/Twist',
+      (msg) => {
+        //  mainWindow.webContents.send('cmd_vel', msg)
+        mainWindow.webContents.send('cmd_vel', msg)
+      }
     )
-
   })
 
   return mainWindow
