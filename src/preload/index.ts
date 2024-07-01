@@ -12,7 +12,8 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', {
       onCloud: (callback) => ipcRenderer.on('cloud', (_, cloud) => callback(cloud)),
       onTFStatic: (callback) => ipcRenderer.on('tf_static', (_, tf_static) => callback(tf_static)),
-      oncmdVel: (callback) => ipcRenderer.on('cmd_vel', (_, cmd_vel) => callback(cmd_vel))
+      oncmdVel: (callback) => ipcRenderer.on('cmd_vel', (_, cmd_vel) => callback(cmd_vel)),
+      onERC: (callback) => ipcRenderer.on('erc', (_, erc) => callback(erc))
     })
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {

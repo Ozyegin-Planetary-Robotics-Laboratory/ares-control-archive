@@ -6,8 +6,7 @@ import * as THREE from 'three'
 import icon from '../../resources/icon.png?asset'
 import ros from 'rosnodejs'
 import Subscriber from 'rosnodejs/dist/lib/Subscriber'
-import { transform } from 'typescript'
-import { exo, find } from './tf2'
+import { exo } from './tf2'
 
 /**
  * Electron
@@ -44,8 +43,6 @@ function createWindow(): BrowserWindow {
   }
 
   ros.initNode('/ares_electron_gui').then((nh) => {
-    exo(nh)
-    find()
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
       '/cloud',
@@ -59,7 +56,8 @@ function createWindow(): BrowserWindow {
     const sub2: Subscriber<'tf2_msgs/TFMessage'> = nh.subscribe(
       '/tf',
       'tf2_msgs/TFMessage',
-      (msg) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (msg: any) => {
         // eslint-disable-next-line prettier/prettier
         if (msg.transforms[0].header.frame_id === 'map' && msg.transforms[0].child_frame_id === 'base_link') {
           mainWindow.webContents.send('tf_static', msg.transforms[0])
@@ -75,8 +73,21 @@ function createWindow(): BrowserWindow {
         mainWindow.webContents.send('cmd_vel', msg)
       }
     )
-  })
+    // erc-odomerty-node
+    console.log('sub4')
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const sub4 : Subscriber<'geometry_msgs/TransforStamped'> = nh.subscribe(
+      '/ground_truth',
+      (msg) => {
+        const cloud_mesh: THREE.Points = parse(msg)
+        console.log(cloud_mesh.toJSON())
+        mainWindow.webContents.send('erc', cloud_mesh.toJSON())
+      }
+    )
 
+    exo(nh)
+    //find()
+  })
   return mainWindow
 }
 

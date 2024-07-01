@@ -1,6 +1,5 @@
 import NodeHandle from 'rosnodejs/dist/lib/NodeHandle'
 import Subscriber from 'rosnodejs/dist/lib/Subscriber'
-import { now } from 'rosnodejs/dist/lib/time/time_utils'
 
 class Node {
   value: string
@@ -40,7 +39,7 @@ const g: Graph = new Graph()
 class Connection {
   to: string
   from: string
-  timestamp: number
+  timestamp: { secs: number; nsecs: number }
   constructor(to, from, timestamp) {
     this.to = to
     this.from = from
@@ -63,44 +62,46 @@ function exo(nh: NodeHandle) {
         msg.transforms[0].child_frame_id === 'base_link'
       ) {
         //console.log(msg.transforms[0])
-        for (let i = 0; i < msg.transforms.length; i++) {
+        for (let i = 0; i < msg.transforms.length; ++i) {
           //console.log(msg.transforms[i].header.frame_id)
           g.addNode(msg.transforms[i].header.frame_id)
           g.addNode(msg.transforms[i].child_frame_id)
           g.addEdge(msg.transforms[i].header.frame_id, msg.transforms[i].child_frame_id)
-          if (connections.length != 0) {
-            for (const Connection of connections) {
-              if (Connection.to === msg.transforms[i].header.frame_id) {
-                if (Connection.from === msg.transforms[i].child_frame_id) {
-                  connections[connections.indexOf(Connection)].timestamp = msg.transforms[i].header.stamp
+          if (connections.length > 0) {
+            for (const cnn of connections) {
+              //console.log(connections.indexOf(Connection))
+              if (cnn.to === msg.transforms[i].header.frame_id) {
+                if (cnn.from === msg.transforms[i].child_frame_id) {
+                  connections[connections.indexOf(cnn)].timestamp = msg.transforms[i].header.stamp
+                  console.log(connections[connections.indexOf(cnn)].timestamp)
+                  console.log(msg.transforms[i].header.stamp)
+                  //console.log(connections)
                 } else {
                   connections.push(
-                    msg.transforms[i].header.frame_id,
-                    msg.transforms[i].child_frame_id,
-                    msg.transforms[i].header.stamp.secs
+                    new Connection(
+                      msg.transforms[i].header.frame_id,
+                      msg.transforms[i].child_frame_id,
+                      msg.transforms[i].header.stamp
+                    )
                   )
                 }
                 connections.push(
-                  msg.transforms[i].header.frame_id,
-                  msg.transforms[i].child_frame_id,
-                  msg.transforms[i].header.stamp
+                  new Connection(
+                    msg.transforms[i].header.frame_id,
+                    msg.transforms[i].child_frame_id,
+                    msg.transforms[i].header.stamp
+                  )
                 )
               }
             }
           } else
             connections.push(
-              msg.transforms[i].header.frame_id,
-              msg.transforms[i].child_frame_id,
-              msg.transforms[i].header.stamp
+              new Connection(
+                msg.transforms[i].header.frame_id,
+                msg.transforms[i].child_frame_id,
+                msg.transforms[i].header.stamp
+              )
             )
-          //connections.push(msg.transforms[i].header.frame_id, msg.transforms[i].child_frame_id)
-          //console.log(typeof msg.transforms[i].header.frame_id)
-          //console.log(g)
-          /*for (const [key, value] of g.nodes.entries()) {
-            console.log(key, value)
-          }
-          console.log(' *************************** ')*/
-          find()
         }
       }
     }
@@ -108,7 +109,8 @@ function exo(nh: NodeHandle) {
 }
 export { exo }
 
-function find() {
-  console.log(connections)
+/*function find(parent: string, child: string) {
+  
+  return
 }
-export { find }
+export { find }*/

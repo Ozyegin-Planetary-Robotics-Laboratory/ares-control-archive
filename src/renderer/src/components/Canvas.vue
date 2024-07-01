@@ -151,9 +151,21 @@ window.electron.oncmdVel((data: unknown) => {
   three.objects['ball'].position.x += data.linear.x
   three.objects['ball'].position.y += data.linear.y
   three.objects['ball'].position.z += data.linear.z
-  t
 })
 
+window.electron.onERC((data: unknown) => {
+  if (!three.objects) {
+    if (!three.objects['ball']) {
+      return
+    }
+  }
+  const quaternion = new THREE.Quaternion()
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.angular.z)
+  three.objects['ball'].quaternion.multiply(quaternion)
+  three.objects['ball'].position.x += data.linear.x
+  three.objects['ball'].position.y += data.linear.y
+  three.objects['ball'].position.z += data.linear.z
+})
 </script>
 
 <template>
