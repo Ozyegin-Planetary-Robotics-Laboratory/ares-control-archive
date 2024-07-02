@@ -10,7 +10,8 @@ const three: {
   renderer: THREE.WebGLRenderer
   controls: OrbitControls | null
   oloader: ObjectLoader
-  objects: Record<string, THREE.Object3D>
+  objects: Record<string, THREE.Object3D>,
+  axis: THREE.AxesHelper
 } = {
   scene: new THREE.Scene(),
   camera: new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
@@ -19,14 +20,14 @@ const three: {
   }),
   controls: null,
   oloader: new ObjectLoader(),
-  objects: {}
+  objects: {},
+  axis: new THREE.AxesHelper(5)
 }
 
 const controls = new OrbitControls(three.camera, three.renderer.domElement)
 three.controls = controls
 
 const initScene = () => {
-  three.scene.rotation.x = -Math.PI / 2
   const light1 = new THREE.DirectionalLight(0xffffff, 1)
   const light2 = new THREE.DirectionalLight(0x666666, 1)
   light1.position.set(7, 2, 10)
@@ -48,6 +49,7 @@ const initScene = () => {
   grid.material.transparent = true
   three.scene.add(grid)
   three.objects['grid'] = grid
+  three.scene.add(three.axis)
 }
 
 const initCamera = () => {
@@ -108,6 +110,7 @@ three.renderer.setAnimationLoop(() => {
 
 window.electron.onCloud((data: unknown) => {
   const point_cloud = three.oloader.parse(data)
+  point_cloud.rotateX(-Math.PI / 2)
   if (three.objects['terrain']) {
     const obj = three.objects['terrain']
     if (obj.geometry) {
@@ -120,51 +123,20 @@ window.electron.onCloud((data: unknown) => {
   three.objects['terrain'] = point_cloud
 })
 
-window.electron.onTFStatic((data: unknown) => {
+window.electron.onTF2Update((data: unknown) => {
   if (!three.objects) {
-    if (!three.objects['ball']) {
-      return
-    }
+    return
+  } else if (!three.objects['ball']) {
+    return
   }
   three.objects['ball'].position.x = data.transform.translation.x
   three.objects['ball'].position.y = data.transform.translation.y
   three.objects['ball'].position.z = data.transform.translation.z
-  /*const quaternionY = new THREE.Quaternion()
-  quaternionY.setFromAxisAngle(new THREE.Vector3(0, 1, 0).normalize(), 0.01)
-  three.objects['ball'].quaternion.multiply(quaternionY)*/
   const quaternion = new THREE.Quaternion()
   quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.transform.rotation.z)
   quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0).normalize(), data.transform.rotation.y)
   quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0).normalize(), data.transform.rotation.x)
-  three.objects['ball'].quaternion.multiply(quaternion)
-})
-
-window.electron.oncmdVel((data: unknown) => {
-  if (!three.objects) {
-    if (!three.objects['ball']) {
-      return
-    }
-  }
-  const quaternion = new THREE.Quaternion()
-  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.angular.z)
-  three.objects['ball'].quaternion.multiply(quaternion)
-  three.objects['ball'].position.x += data.linear.x
-  three.objects['ball'].position.y += data.linear.y
-  three.objects['ball'].position.z += data.linear.z
-})
-
-window.electron.onERC((data: unknown) => {
-  if (!three.objects) {
-    if (!three.objects['ball']) {
-      return
-    }
-  }
-  const quaternion = new THREE.Quaternion()
-  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.angular.z)
-  three.objects['ball'].quaternion.multiply(quaternion)
-  three.objects['ball'].position.x += data.linear.x
-  three.objects['ball'].position.y += data.linear.y
-  three.objects['ball'].position.z += data.linear.z
+  three.objects['ball'].quaternion.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w)
 })
 </script>
 

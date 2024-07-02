@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import icon from '../../resources/icon.png?asset'
 import ros from 'rosnodejs'
 import Subscriber from 'rosnodejs/dist/lib/Subscriber'
-import { exo } from './tf2'
+// import { exo } from './tf2'
 
 /**
  * Electron
@@ -44,8 +44,8 @@ function createWindow(): BrowserWindow {
 
   ros.initNode('/ares_electron_gui').then((nh) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
-      '/cloud',
+    const cloud_sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
+      '/zed2i/zed_node/point_cloud/cloud_registered',
       'sensor_msgs/PointCloud2',
       (msg) => {
         const cloud_mesh: THREE.Points = parse(msg)
@@ -53,40 +53,17 @@ function createWindow(): BrowserWindow {
       }
     )
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub2: Subscriber<'tf2_msgs/TFMessage'> = nh.subscribe(
+    const tf2_sub: Subscriber<'tf2_msgs/TFMessage'> = nh.subscribe(
       '/tf',
       'tf2_msgs/TFMessage',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (msg: any) => {
         // eslint-disable-next-line prettier/prettier
-        if (msg.transforms[0].header.frame_id === 'map' && msg.transforms[0].child_frame_id === 'base_link') {
-          mainWindow.webContents.send('tf_static', msg.transforms[0])
+        if (msg.transforms[0].header.frame_id === 'map' && msg.transforms[0].child_frame_id === 'base_footprint') {
+          mainWindow.webContents.send('tf2_rover_pose_update', msg.transforms[0])
         }
       }
     )
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub3: Subscriber<'geometry_msgs/TransformStamped'> = nh.subscribe(
-      '/cmd_vel',
-      'geometry_msgs/Twist',
-      (msg) => {
-        //  mainWindow.webContents.send('cmd_vel', msg)
-        mainWindow.webContents.send('cmd_vel', msg)
-      }
-    )
-    // erc-odomerty-node
-    console.log('sub4')
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub4 : Subscriber<'geometry_msgs/TransforStamped'> = nh.subscribe(
-      '/ground_truth',
-      (msg) => {
-        const cloud_mesh: THREE.Points = parse(msg)
-        console.log(cloud_mesh.toJSON())
-        mainWindow.webContents.send('erc', cloud_mesh.toJSON())
-      }
-    )
-
-    exo(nh)
-    //find()
   })
   return mainWindow
 }
