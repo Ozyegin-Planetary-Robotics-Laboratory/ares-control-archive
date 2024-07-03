@@ -10,7 +10,8 @@ const api = {}
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', {
-      onCloud: (callback) => ipcRenderer.on('cloud', (_, cloud) => callback(cloud))
+      onCloud: (callback) => ipcRenderer.on('cloud', (_, cloud) => callback(cloud)),
+      onTF2Update: (callback) => ipcRenderer.on('tf2_rover_pose_update', (_, tf) => callback(tf)),
     })
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {

@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import icon from '../../resources/icon.png?asset'
 import ros from 'rosnodejs'
 import Subscriber from 'rosnodejs/dist/lib/Subscriber'
+// import { exo } from './tf2'
 
 /**
  * Electron
@@ -43,16 +44,27 @@ function createWindow(): BrowserWindow {
 
   ros.initNode('/ares_electron_gui').then((nh) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
-      '/cloud',
+    const cloud_sub: Subscriber<'sensor_msgs/PointCloud2'> = nh.subscribe(
+      '/zed2i/zed_node/point_cloud/cloud_registered',
       'sensor_msgs/PointCloud2',
       (msg) => {
         const cloud_mesh: THREE.Points = parse(msg)
         mainWindow.webContents.send('cloud', cloud_mesh.toJSON())
       }
     )
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const tf2_sub: Subscriber<'tf2_msgs/TFMessage'> = nh.subscribe(
+      '/tf',
+      'tf2_msgs/TFMessage',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (msg: any) => {
+        // eslint-disable-next-line prettier/prettier
+        if (msg.transforms[0].header.frame_id === 'map' && msg.transforms[0].child_frame_id === 'base_footprint') {
+          mainWindow.webContents.send('tf2_rover_pose_update', msg.transforms[0])
+        }
+      }
+    )
   })
-
   return mainWindow
 }
 

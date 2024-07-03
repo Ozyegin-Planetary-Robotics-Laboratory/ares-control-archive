@@ -10,7 +10,8 @@ const three: {
   renderer: THREE.WebGLRenderer
   controls: OrbitControls | null
   oloader: ObjectLoader
-  objects: Record<string, THREE.Object3D>
+  objects: Record<string, THREE.Object3D>,
+  axis: THREE.AxesHelper
 } = {
   scene: new THREE.Scene(),
   camera: new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000),
@@ -19,14 +20,14 @@ const three: {
   }),
   controls: null,
   oloader: new ObjectLoader(),
-  objects: {}
+  objects: {},
+  axis: new THREE.AxesHelper(5)
 }
 
 const controls = new OrbitControls(three.camera, three.renderer.domElement)
 three.controls = controls
 
 const initScene = () => {
-  three.scene.rotation.x = -Math.PI / 2
   const light1 = new THREE.DirectionalLight(0xffffff, 1)
   const light2 = new THREE.DirectionalLight(0x666666, 1)
   light1.position.set(7, 2, 10)
@@ -37,6 +38,18 @@ const initScene = () => {
   three.objects['light2'] = light2
   three.scene.add(new THREE.AmbientLight(0x666666))
   three.scene.background = new THREE.Color(0xaaaaaa)
+  const ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 15, 1),
+    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+  )
+  three.scene.add(ball)
+  three.objects['ball'] = ball
+  const grid = new THREE.GridHelper(10, 10, 0x000000, 0x000000)
+  grid.material.opacity = 0.2
+  grid.material.transparent = true
+  three.scene.add(grid)
+  three.objects['grid'] = grid
+  three.scene.add(three.axis)
 }
 
 const initCamera = () => {
@@ -97,6 +110,7 @@ three.renderer.setAnimationLoop(() => {
 
 window.electron.onCloud((data: unknown) => {
   const point_cloud = three.oloader.parse(data)
+  point_cloud.rotateX(-Math.PI / 2)
   if (three.objects['terrain']) {
     const obj = three.objects['terrain']
     if (obj.geometry) {
@@ -107,6 +121,22 @@ window.electron.onCloud((data: unknown) => {
   }
   three.scene.add(point_cloud)
   three.objects['terrain'] = point_cloud
+})
+
+window.electron.onTF2Update((data: unknown) => {
+  if (!three.objects) {
+    return
+  } else if (!three.objects['ball']) {
+    return
+  }
+  three.objects['ball'].position.x = data.transform.translation.x
+  three.objects['ball'].position.y = data.transform.translation.y
+  three.objects['ball'].position.z = data.transform.translation.z
+  const quaternion = new THREE.Quaternion()
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1).normalize(), data.transform.rotation.z)
+  quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0).normalize(), data.transform.rotation.y)
+  quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0).normalize(), data.transform.rotation.x)
+  three.objects['ball'].quaternion.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w)
 })
 </script>
 
